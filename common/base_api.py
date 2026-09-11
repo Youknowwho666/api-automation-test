@@ -14,7 +14,7 @@ class BaseApi:
                 method=method,
                 url=full_url,
                 headers=self.headers,
-                timeout=10,
+                timeout=60,
                 **kwargs
             )
             return response

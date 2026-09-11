@@ -43,3 +43,49 @@ class TestPosts:
         """测试删除帖子"""
         response = posts_api.delete_post(1)
         assert response.status_code == 200
+
+    def test_get_post_not_found(self,posts_api):
+        """异常入参:获取不存在的帖子(ID=999)"""
+        response = posts_api.get_post_detail(999)
+        assert response.status_code == 404
+
+    def test_get_post_invalid_id_string(self,posts_api):
+        """异常入参：获取帖子-非法字符ID("abc")"""
+        response = posts_api.get_post_detail("abc")
+        assert response.status_code == 404
+
+    def test_get_post_negative_id(self, posts_api):
+        """异常入参：获取帖子-负数ID"""
+        response = posts_api.get_post_detail(-1)
+        assert response.status_code == 404
+
+    def test_create_post_empty_title(self, posts_api):
+        """边界值：创建帖子-空标题"""
+        response = posts_api.create_post({"title": "", "body": "test body", "userId": 1})
+        assert response.status_code == 201
+        assert response.json()["title"] == ""
+
+    def test_create_post_empty_body(self, posts_api):
+        """边界值：创建帖子-空body"""
+        response = posts_api.create_post({"title": "test title", "body": "", "userId": 1})
+        assert response.status_code == 201
+        assert response.json()["body"] == ""
+
+    def test_create_post_missing_title(self, posts_api):
+        """异常入参：创建帖子-缺少title字段"""
+        response = posts_api.create_post({"body": "test body", "userId": 1})
+        assert response.status_code == 201
+
+    def test_update_post_not_found(self, posts_api):
+        """异常入参：更新不存在的帖子（ID=999）"""
+        update_data = {"title": "new title", "body": "new body", "userId": 1}
+        response = posts_api.update_post(999, update_data)
+        assert response.status_code == 500
+
+    def test_delete_post_not_found(self, posts_api):
+        """异常入参：删除不存在的帖子（ID=999）"""
+        response = posts_api.delete_post(999)
+        assert response.status_code == 200
+
+
+    
