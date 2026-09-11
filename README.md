@@ -1,242 +1,152 @@
-# API自动化测试项目
+# API接口自动化测试项目
 
-## 📋 项目概述
+## 项目概述
 
-这是一个基于Python的RESTful API自动化测试框架，采用pytest测试框架和requests库构建，专门用于测试JSONPlaceholder API服务。项目遵循现代软件测试的最佳实践，具有清晰的分层架构和完整的测试覆盖。
+基于 Python + Pytest + requests 对 JSONPlaceholder 公开 API 进行接口自动化测试，覆盖正常流程、异常入参、边界值场景共 15 条测试用例，使用 pytest-html 生成 HTML 测试报告。
 
-## 🏗️ 项目架构
+## 技术栈
+
+| 工具                   | 用途          |
+| -------------------- | ----------- |
+| Python 3.12          | 编程语言        |
+| Pytest 9.0           | 测试框架        |
+| requests             | HTTP 请求库    |
+| pytest-html          | HTML 测试报告生成 |
+| pytest-rerunfailures | 失败重试机制      |
+| PyYAML               | 测试数据管理      |
+
+## 项目结构
 
 ```
-D:\api_test_project\
-├── common\              # 核心框架层
-│   └── base_api.py     # 基础API客户端封装
-├── data\               # 测试数据管理
-│   └── posts_data.yaml # 帖子模块测试数据
-├── reports\            # 测试报告输出
-│   └── report.html     # HTML格式测试报告
-├── testcases\          # 测试用例目录
-│   └── posts\          # 帖子模块测试
-│       ├── posts_api.py # 帖子API封装
-│       └── test_posts.py # 帖子测试用例
-├── pytest.ini         # pytest配置文件
-└── requirements.txt   # 项目依赖清单
+api_test_project/
+├── common/                         # 核心框架层
+│   └── base_api.py                # 基础API客户端封装（GET/POST/PUT/DELETE）
+├── data/                           # 测试数据管理
+│   └── posts_data.yaml            # 帖子模块测试数据（数据驱动）
+├── reports/                        # 测试报告输出
+│   └── report.html                # HTML 格式测试报告
+├── testcases/                      # 测试用例目录
+│   └── posts/
+│       ├── posts_api.py           # 帖子API业务封装
+│       └── test_posts.py          # 帖子测试用例（15条）
+├── conftest.py                     # pytest 全局配置
+├── pytest.ini                      # pytest 配置文件
+├── requirements.txt                # 依赖清单
+└── README.md
 ```
 
-## 🔧 核心组件详解
+## 测试用例设计
 
-### 1. 基础API框架 (`common/base_api.py`)
+### 正常流程（7条）
 
-实现了通用的HTTP客户端功能：
+| 测试方法                              | 描述           | 期望状态码 |
+| --------------------------------- | ------------ | ----- |
+| test\_get\_post\_list             | 获取帖子列表       | 200   |
+| test\_get\_post\_detail\[正常获取帖子1] | 获取帖子详情(ID=1) | 200   |
+| test\_get\_post\_detail\[正常获取帖子2] | 获取帖子详情(ID=2) | 200   |
+| test\_create\_post\[正常创建帖子]       | 创建新帖子        | 201   |
+| test\_create\_post\[创建帖子-带特殊字符]   | 创建帖子(特殊字符)   | 201   |
+| test\_update\_post                | 更新帖子         | 200   |
+| test\_delete\_post                | 删除帖子         | 200   |
 
-```python
-class BaseApi:
-    - 统一的基础URL配置
-    - 通用请求发送方法
-    - 完整的HTTP方法支持 (GET/POST/PUT/DELETE)
-    - 异常处理机制
-    - 超时控制 (10秒)
-```
+### 异常入参（5条）
 
-**主要特性：**
-- 🔄 可复用的请求基础类
-- ⚡ 统一的超时和头部配置
-- 🛡️ 完善的异常捕获机制
-- 🔧 灵活的参数传递支持
+| 测试方法                                 | 描述               | 期望状态码 |
+| ------------------------------------ | ---------------- | ----- |
+| test\_get\_post\_not\_found          | 获取不存在的帖子(ID=999) | 404   |
+| test\_get\_post\_invalid\_id\_string | 非法字符ID("abc")    | 404   |
+| test\_get\_post\_negative\_id        | 负数ID(-1)         | 404   |
+| test\_create\_post\_missing\_title   | 创建帖子缺少title字段    | 201   |
+| test\_update\_post\_not\_found       | 更新不存在的帖子(ID=999) | 500   |
 
-### 2. 业务API封装 (`testcases/posts/posts_api.py`)
+### 边界值（3条）
 
-继承BaseApi，封装具体的业务接口：
+| 测试方法                             | 描述               | 期望状态码 |
+| -------------------------------- | ---------------- | ----- |
+| test\_create\_post\_empty\_title | 空标题              | 201   |
+| test\_create\_post\_empty\_body  | 空body            | 201   |
+| test\_delete\_post\_not\_found   | 删除不存在的帖子(ID=999) | 200   |
 
-```python
-class PostsApi(BaseApi):
-    def get_post_list(self)      # 获取帖子列表
-    def get_post_detail(self, post_id)  # 获取帖子详情
-    def create_post(self, post_data)    # 创建新帖子
-    def update_post(self, post_id, data) # 更新帖子
-    def delete_post(self, post_id)      # 删除帖子
-```
+## 快速开始
 
-### 3. 测试数据驱动 (`data/posts_data.yaml`)
+### 1. 克隆项目
 
-采用YAML格式管理测试数据，支持数据驱动测试：
-
-```yaml
-create_post_cases:           # 创建帖子测试场景
-  - name: "正常创建帖子"
-    data:
-      title: "foo"
-      body: "bar" 
-      userId: 1
-    expected_status: 201
-
-get_post_cases:              # 获取帖子详情测试场景
-  - name: "正常获取帖子1"
-    post_id: 1
-    expected_status: 200
-    expected_userId: 1
-```
-
-## 🧪 测试用例设计
-
-### 当前测试覆盖 (7个用例)
-
-| 测试方法 | 描述 | 测试类型 | 状态 |
-|---------|------|----------|------|
-| `test_get_post_list` | 获取帖子列表 | 功能测试 | ✅ 通过 |
-| `test_get_post_detail` | 获取帖子详情 | 参数化测试(2组数据) | ✅ 通过 |
-| `test_create_post` | 创建帖子 | 参数化测试(2组数据) | ✅ 通过 |
-| `test_update_post` | 更新帖子 | 功能测试 | ✅ 通过 |
-| `test_delete_post` | 删除帖子 | 功能测试 | ✅ 通过 |
-
-### 测试策略特点
-
-- **数据驱动**: 使用YAML文件管理测试数据
-- **参数化测试**: 一个测试方法覆盖多个测试场景
-- **多维度验证**: 状态码 + 业务数据双重断言
-- **中文友好**: 测试用例名称支持中文显示
-
-## ⚙️ 环境配置
-
-### 依赖安装
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/Youknowwho666/api-automation-test.git
+cd api-automation-test
 ```
 
-**核心依赖包：**
-- `pytest>=7.0.0` - 测试框架
-- `requests>=2.28.0` - HTTP客户端
-- `pytest-html>=3.1.1` - HTML报告生成
-- `pyyaml>=6.0` - YAML数据解析
-- `python-dotenv>=1.0.0` - 环境变量管理
+### 2. 创建虚拟环境
 
-### 运行测试
-```bash
-# 运行所有测试
-python -m pytest
-
-# 运行特定模块测试
-python -m pytest testcases/posts/test_posts.py -v
-
-# 生成详细HTML报告
-python -m pytest --html=reports/report.html --self-contained-html
-```
-
-## 📊 测试报告
-
-### 报告特性
-- 🎨 美观的HTML格式展示
-- 📈 详细的测试执行统计
-- 🔍 可折叠的测试详情
-- 📱 响应式设计，支持移动端浏览
-- 🔄 自动刷新功能
-
-### 报告内容
-- 测试概览统计
-- 详细测试结果
-- 执行环境信息
-- 失败用例详情
-- 执行时间分析
-
-## 🔧 项目配置
-
-### pytest.ini 配置
-```ini
-[pytest]
-testpaths = testcases           # 测试文件搜索路径
-python_files = test_*.py        # 测试文件命名规则
-python_classes = Test*          # 测试类命名规则
-python_functions = test_*       # 测试方法命名规则
-addopts = -v --html=reports/report.html --self-contained-html  # 默认选项
-```
-
-### 环境变量配置
-项目支持通过 `.env` 文件配置：
-- API基础URL
-- 认证信息
-- 超时设置
-- 日志级别等
-
-## 🎯 最佳实践体现
-
-### 1. 分层架构设计
-```
-测试用例层 → 业务API层 → 基础API层
-```
-各层职责明确，便于维护和扩展。
-
-### 2. 配置与代码分离
-- 测试数据外部化 (YAML文件)
-- 环境配置独立管理
-- 降低硬编码风险
-
-### 3. 可扩展性考虑
-- 模块化设计，易于新增API测试
-- 统一的异常处理机制
-- 灵活的参数配置支持
-
-### 4. 工程化标准
-- 完整的.gitignore配置
-- 虚拟环境隔离
-- 依赖版本锁定
-- 标准化的项目结构
-
-## 🚀 快速开始
-
-1. **克隆项目**
-```bash
-git clone <repository-url>
-cd api_test_project
-```
-
-2. **创建虚拟环境**
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate     # Windows
+
+# Windows
+venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source venv/bin/activate
 ```
 
-3. **安装依赖**
+### 3. 安装依赖
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **运行测试**
+### 4. 运行测试
+
 ```bash
+# 运行所有测试
 python -m pytest -v
+
+# 运行并生成HTML报告
+python -m pytest --html=reports/report.html --self-contained-html -v
+
+# 失败重试（网络不稳定时使用）
+python -m pytest --reruns 3 --reruns-delay 5 -v
 ```
 
-5. **查看报告**
-打开 `reports/report.html` 查看详细测试结果
+### 5. 查看报告
 
-## 📈 项目成熟度评估
+打开 `reports/report.html` 查看测试结果。
 
-| 评估维度 | 评分 | 说明 |
-|---------|------|------|
-| 架构设计 | ⭐⭐⭐⭐⭐ | 清晰的分层架构，高内聚低耦合 |
-| 代码质量 | ⭐⭐⭐⭐⭐ | 符合PEP8规范，注释完整 |
-| 测试覆盖 | ⭐⭐⭐⭐ | 基础CRUD全覆盖，数据驱动完善 |
-| 工程化 | ⭐⭐⭐⭐⭐ | 完整的CI/CD配置，依赖管理规范 |
-| 可维护性 | ⭐⭐⭐⭐⭐ | 模块化设计，易于扩展维护 |
+## 分层架构设计
 
-## 🆕 后续发展规划
+```
+测试用例层 (test_posts.py)
+    ↓ 调用
+业务API层 (posts_api.py)
+    ↓ 继承
+基础API层 (base_api.py)
+    ↓ 发送
+JSONPlaceholder API
+```
 
-### 短期目标 (1-2周)
-- [ ] 增加响应时间性能测试
-- [ ] 添加Schema验证机制
-- [ ] 实现测试数据动态生成
+- **基础API层**：封装通用 HTTP 请求方法，支持 GET/POST/PUT/DELETE，统一超时和异常处理
 
-### 中期目标 (1-2月)  
-- [ ] 支持并发测试执行
-- [ ] 集成数据库测试数据管理
-- [ ] 添加测试覆盖率统计
+- **业务API层**：继承基础API，封装帖子模块的具体接口
 
-### 长期目标 (3-6月)
-- [ ] 构建Web管理界面
-- [ ] 实现定时自动化测试
-- [ ] 集成持续集成流水线
+- **测试用例层**：调用业务API，执行测试并断言结果
 
----
-<p align="center">
-  <strong>🎯 高质量的API测试解决方案</strong>
-</p>
+- **数据驱动**：测试数据与代码分离，通过 YAML 文件管理
+
+## 测试策略
+
+- **数据驱动测试**：使用 YAML 文件管理测试数据，参数化测试覆盖多场景
+
+- **多维度断言**：状态码 + 业务数据双重校验
+
+- **异常场景覆盖**：不存在的ID、非法字符、负数、缺失字段
+
+- **边界值测试**：空字符串、空body
+
+- **失败重试机制**：网络波动时自动重试，提升稳定性
+
+## 被测 API
+
+- **目标**：JSONPlaceholder（<https://jsonplaceholder.typicode.com）>
+
+- **类型**：免费公开的 RESTful API，无需认证
+
+- **资源**：/posts（帖子的 CRUD 操作）
