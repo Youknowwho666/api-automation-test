@@ -76,7 +76,12 @@ def logged_in_context(browser):
 
 @pytest.fixture()
 def logged_in_page(logged_in_context):
-    """带登录态的页面，UI 用例直接注入即可，无需再登录。"""
+    """带登录态的页面，UI 用例直接注入即可，无需再登录。
+
+    因为 logged_in_context 是 session 级（登录态要复用），购物车这类
+    状态会被带入下一条用例。所以这里进入商品页后先清空购物车，
+    保证每条用例都从干净状态开始 —— 这是「复用登录态」必须付的代价。
+    """
     page = logged_in_context.new_page()
     page.set_default_timeout(config.ui_timeout)
     yield page

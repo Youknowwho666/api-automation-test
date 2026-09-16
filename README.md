@@ -46,8 +46,8 @@ api_test_project/
 │       │   ├── login_page.py       #    登录页
 │       │   └── inventory_page.py   #    商品列表页
 │       ├── conftest.py             #  browser/context/page 生命周期 + 登录态复用
-│       ├── test_login.py           #  登录用例
-│       └── test_inventory.py       #  商品与购物车用例
+│       ├── test_login.py           #  登录用例（6 条）
+│       └── test_inventory.py       #  商品与购物车用例（8 条）
 ├── logs/                            # 运行日志（按天切分，保留 7 天）
 ├── reports/                         # 报告输出（allure-results / report.html / 失败截图）
 ├── .github/workflows/ci.yml         # CI：接口 + UI 双 job + Allure 汇总
@@ -96,12 +96,14 @@ UI 层同样遵循这条思路：**页面改了只改 Page Object，用例不动
 | 用户 `/users` | 10 | 列表、详情、关联资源（posts/albums/todos）、创建 |
 | 评论 `/comments` | 5 | 列表、详情、按 postId / email 筛选 |
 
-### UI 自动化（13 条）
+### UI 自动化（14 条）
 
 | 模块 | 用例数 | 覆盖场景 |
 | --- | --- | --- |
 | 登录 | 6 | 登录成功、锁定账号、密码错误、账号为空、密码为空、元素可见性 |
-| 商品与购物车 | 7 | 商品加载、价格/名称排序、加入购物车（1 件/2 件）、跳转购物车、元素可见性 |
+| 商品与购物车 | 8 | 商品加载、价格/名称排序、加入购物车（1 件/2 件）、移除商品、跳转购物车、元素可见性 |
+
+> 合计 **56 条**用例（42 接口 + 14 UI）。
 
 ### 多维度断言
 
@@ -209,6 +211,9 @@ def logged_in_page(logged_in_context):
 ```
 
 登录流程从「每条用例跑一次」变成「整个会话跑一次」，UI 套件执行时间大幅下降。
+
+**但复用登录态有个坑**：上下文是 session 级的，购物车这类状态会被带入下一条用例。
+所以每条购物车用例开始前都会调 `clear_cart()` 复位——用例必须能独立运行，不能依赖执行顺序。
 
 ### 4. 失败自动留痕
 
