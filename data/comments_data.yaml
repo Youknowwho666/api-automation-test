@@ -1,0 +1,25 @@
+# 评论模块测试数据
+
+get_comment_cases:
+  - name: "正常获取评论1"
+    comment_id: 1
+    expected_status: 200
+    expected_postId: 1
+  - name: "正常获取评论500"
+    comment_id: 500
+    expected_status: 200
+    expected_postId: 100
+  - name: "异常-不存在的评论ID9999"
+    comment_id: 9999
+    expected_status: 404
+    expected_postId: null
+
+filter_cases:
+  - name: "按帖子ID=1筛选评论"
+    param: "postId"
+    value: 1
+    expected_status: 200
+  - name: "按帖子ID=100筛选评论"
+    param: "postId"
+    value: 100
+    expected_status: 200

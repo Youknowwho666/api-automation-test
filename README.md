@@ -1,71 +1,117 @@
-# API接口自动化测试项目
+# 接口 + UI 自动化测试框架
 
-## 项目概述
+一个从零搭建的 **接口自动化 + UI 自动化** 测试框架，分层清晰、数据驱动、带完整报告体系与 CI 流水线。
 
-基于 Python + Pytest + requests 对 JSONPlaceholder 公开 API 进行接口自动化测试，覆盖正常流程、异常入参、边界值场景共 15 条测试用例，使用 pytest-html 生成 HTML 测试报告。
+- **接口自动化**：Python + Pytest + requests，覆盖 JSONPlaceholder 公开 API 的 `/posts`、`/users`、`/comments` 三大模块
+- **UI 自动化**：Playwright + Page Object Model，覆盖 SauceDemo 电商站点的登录、商品列表、购物车
 
 ## 技术栈
 
-| 工具                   | 用途          |
-| -------------------- | ----------- |
-| Python 3.12          | 编程语言        |
-| Pytest 9.0           | 测试框架        |
-| requests             | HTTP 请求库    |
-| pytest-html          | HTML 测试报告生成 |
-| pytest-rerunfailures | 失败重试机制      |
-| PyYAML               | 测试数据管理      |
+| 技术 | 用途 |
+| --- | --- |
+| Python 3.12 | 编程语言 |
+| Pytest | 测试框架 |
+| requests | HTTP 请求库（接口层） |
+| Playwright | 浏览器自动化（UI 层） |
+| Allure | 测试报告（步骤追踪 + 失败截图） |
+| pytest-html | 轻量 HTML 报告 |
+| PyYAML | 测试数据管理（数据驱动） |
+| GitHub Actions | 持续集成 |
 
 ## 项目结构
 
 ```
 api_test_project/
-├── common/                         # 核心框架层
-│   └── base_api.py                # 基础API客户端封装（GET/POST/PUT/DELETE）
-├── data/                           # 测试数据管理
-│   └── posts_data.yaml            # 帖子模块测试数据（数据驱动）
-├── reports/                        # 测试报告输出
-│   └── report.html                # HTML 格式测试报告
-├── testcases/                      # 测试用例目录
-│   └── posts/
-│       ├── posts_api.py           # 帖子API业务封装
-│       └── test_posts.py          # 帖子测试用例（15条）
-├── conftest.py                     # pytest 全局配置
-├── pytest.ini                      # pytest 配置文件
-├── requirements.txt                # 依赖清单
-└── README.md
+├── common/                          # 框架核心层（与业务无关的通用能力）
+│   ├── base_api.py                 #  HTTP 客户端封装：Session 复用 + 日志 + 网络重试
+│   ├── config.py                   #  配置管理：环境变量 > config.yaml > 默认值
+│   ├── logger.py                   #  日志：控制台 + 按天切分文件
+│   ├── assert_util.py              #  断言封装：状态码/字段/契约/性能
+│   └── data_util.py                #  数据加载：YAML/JSON + 可读用例 id
+├── config/
+│   └── config.yaml                 # 多环境配置（含 UI 配置）
+├── data/                            # 测试数据（数据驱动）
+│   ├── posts_data.yaml
+│   ├── users_data.yaml
+│   └── comments_data.yaml
+├── testcases/                       # 测试用例层
+│   ├── posts/                      #  帖子模块
+│   │   ├── posts_api.py            #   业务 API 封装
+│   │   └── test_posts.py           #   测试用例
+│   ├── users/                      #  用户模块
+│   ├── comments/                   #  评论模块
+│   └── ui/                         #  UI 自动化
+│       ├── pages/                  #   Page Object：页面元素与操作封装
+│       │   ├── base_page.py        #    页面基类：通用操作 + 截图
+│       │   ├── login_page.py       #    登录页
+│       │   └── inventory_page.py   #    商品列表页
+│       ├── conftest.py             #  browser/context/page 生命周期 + 登录态复用
+│       ├── test_login.py           #  登录用例
+│       └── test_inventory.py       #  商品与购物车用例
+├── logs/                            # 运行日志（按天切分，保留 7 天）
+├── reports/                         # 报告输出（allure-results / report.html / 失败截图）
+├── .github/workflows/ci.yml         # CI：接口 + UI 双 job + Allure 汇总
+├── conftest.py                      # 全局 fixture 与失败日志
+├── pytest.ini                       # pytest 配置
+└── requirements.txt
 ```
+
+## 架构设计：四层分离
+
+```
+        ┌──────────────────────────────────────┐
+        │  测试用例层  test_posts.py            │  只做「调接口 + 断言」
+        └────────────────┬─────────────────────┘
+                         │ 调用
+        ┌────────────────▼─────────────────────┐
+        │  业务 API 层  posts_api.py            │  按模块封装具体接口
+        └────────────────┬─────────────────────┘
+                         │ 继承
+        ┌────────────────▼─────────────────────┐
+        │  基础 API 层  base_api.py             │  Session / 日志 / 重试
+        └────────────────┬─────────────────────┘
+                         │ 发送
+        ┌────────────────▼─────────────────────┐
+        │  被测服务  JSONPlaceholder API        │
+        └──────────────────────────────────────┘
+
+        数据层  data/*.yaml  ←──  通过 parametrize 注入用例
+```
+
+**为什么这样分？**
+
+- 接口地址或字段变了 → 只改业务 API 层，用例不动
+- 加统一鉴权 / 日志 / 重试 → 只改基础 API 层，全模块生效
+- 加测试数据 → 只改 YAML，不碰代码
+
+UI 层同样遵循这条思路：**页面改了只改 Page Object，用例不动**。
 
 ## 测试用例设计
 
-### 正常流程（7条）
+### 接口自动化（42 条）
 
-| 测试方法                              | 描述           | 期望状态码 |
-| --------------------------------- | ------------ | ----- |
-| test\_get\_post\_list             | 获取帖子列表       | 200   |
-| test\_get\_post\_detail\[正常获取帖子1] | 获取帖子详情(ID=1) | 200   |
-| test\_get\_post\_detail\[正常获取帖子2] | 获取帖子详情(ID=2) | 200   |
-| test\_create\_post\[正常创建帖子]       | 创建新帖子        | 201   |
-| test\_create\_post\[创建帖子-带特殊字符]   | 创建帖子(特殊字符)   | 201   |
-| test\_update\_post                | 更新帖子         | 200   |
-| test\_delete\_post                | 删除帖子         | 200   |
+| 模块 | 用例数 | 覆盖场景 |
+| --- | --- | --- |
+| 帖子 `/posts` | 19 | 列表/详情/筛选/评论、创建（含空值、超长、缺字段）、PUT/PATCH、删除、404/5xx 异常、性能兜底 |
+| 用户 `/users` | 10 | 列表、详情、关联资源（posts/albums/todos）、创建 |
+| 评论 `/comments` | 5 | 列表、详情、按 postId / email 筛选 |
 
-### 异常入参（5条）
+### UI 自动化（13 条）
 
-| 测试方法                                 | 描述               | 期望状态码 |
-| ------------------------------------ | ---------------- | ----- |
-| test\_get\_post\_not\_found          | 获取不存在的帖子(ID=999) | 404   |
-| test\_get\_post\_invalid\_id\_string | 非法字符ID("abc")    | 404   |
-| test\_get\_post\_negative\_id        | 负数ID(-1)         | 404   |
-| test\_create\_post\_missing\_title   | 创建帖子缺少title字段    | 201   |
-| test\_update\_post\_not\_found       | 更新不存在的帖子(ID=999) | 500   |
+| 模块 | 用例数 | 覆盖场景 |
+| --- | --- | --- |
+| 登录 | 6 | 登录成功、锁定账号、密码错误、账号为空、密码为空、元素可见性 |
+| 商品与购物车 | 7 | 商品加载、价格/名称排序、加入购物车（1 件/2 件）、跳转购物车、元素可见性 |
 
-### 边界值（3条）
+### 多维度断言
 
-| 测试方法                             | 描述               | 期望状态码 |
-| -------------------------------- | ---------------- | ----- |
-| test\_create\_post\_empty\_title | 空标题              | 201   |
-| test\_create\_post\_empty\_body  | 空body            | 201   |
-| test\_delete\_post\_not\_found   | 删除不存在的帖子(ID=999) | 200   |
+只校验状态码是 **不合格** 的测试——服务端返回 200 但数据是错的，用例一样会"通过"。本项目做三层校验：
+
+1. **状态码断言** — `assert_status_code`
+2. **契约断言** — `assert_schema`：必需字段是否齐全，防止字段被误删
+3. **业务断言** — `assert_field_equals` / `assert_in`：值是否正确
+
+例如「按用户筛选帖子」不只看 200，还会遍历每一条确认 `userId` 真的等于查询值——参数没生效这种 bug 才跑不掉。
 
 ## 快速开始
 
@@ -82,71 +128,114 @@ cd api-automation-test
 python -m venv venv
 
 # Windows
-venv\Scripts\Activate.ps1
+venv\Scripts\activate
 
-# Linux/Mac
+# Linux / macOS
 source venv/bin/activate
 ```
 
 ### 3. 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+
+# UI 测试需要额外安装浏览器（首次执行）
+python -m playwright install chromium
 ```
 
 ### 4. 运行测试
 
 ```bash
-# 运行所有测试
-python -m pytest -v
+# 全部用例
+python -m pytest
 
-# 运行并生成HTML报告
-python -m pytest --html=reports/report.html --self-contained-html -v
+# 只跑接口 / 只跑 UI
+python -m pytest testcases/posts testcases/users testcases/comments
+python -m pytest testcases/ui
 
-# 失败重试（网络不稳定时使用）
-python -m pytest --reruns 3 --reruns-delay 5 -v
+# 只跑冒烟用例（核心链路）
+python -m pytest -m smoke
+
+# 网络不稳定时失败自动重跑
+python -m pytest --reruns 2 --reruns-delay 3
 ```
 
 ### 5. 查看报告
 
-打开 `reports/report.html` 查看测试结果。
+```bash
+# 方式一：轻量 HTML（pytest-html 自动生成）
+#   直接双击打开 reports/report.html
 
-## 分层架构设计
-
-```
-测试用例层 (test_posts.py)
-    ↓ 调用
-业务API层 (posts_api.py)
-    ↓ 继承
-基础API层 (base_api.py)
-    ↓ 发送
-JSONPlaceholder API
+# 方式二：Allure（推荐，含步骤树与失败截图）
+allure serve reports/allure-results
 ```
 
-- **基础API层**：封装通用 HTTP 请求方法，支持 GET/POST/PUT/DELETE，统一超时和异常处理
+## 框架亮点
 
-- **业务API层**：继承基础API，封装帖子模块的具体接口
+### 1. 配置管理：三级优先级
 
-- **测试用例层**：调用业务API，执行测试并断言结果
+`common/config.py` 支持 **环境变量 > config.yaml > 默认值**，切换环境不用改代码：
 
-- **数据驱动**：测试数据与代码分离，通过 YAML 文件管理
+```bash
+# 换个测试环境跑，一行命令搞定
+TEST_BASE_URL=https://staging.example.com python -m pytest
+```
 
-## 测试策略
+### 2. 网络重试：只重试网络层，不重试业务层
 
-- **数据驱动测试**：使用 YAML 文件管理测试数据，参数化测试覆盖多场景
+这是本项目的一个关键设计决策。`Retry` 配置为 `status=0` + `read=2`：
 
-- **多维度断言**：状态码 + 业务数据双重校验
+- **网络层错误**（连接失败、读超时）→ 自动重试，避免环境抖动造成的假失败
+- **业务层 4xx/5xx** → 原样返回给用例断言
 
-- **异常场景覆盖**：不存在的ID、非法字符、负数、缺失字段
+如果让 urllib3 对 500 也重试，`assert_status_code(response, 500)` 这类用例会直接抛 `ResponseError`——**重试机制反过来掩盖了被测系统真实的错误**。
 
-- **边界值测试**：空字符串、空body
+### 3. 登录态复用：UI 用例不再重复登录
 
-- **失败重试机制**：网络波动时自动重试，提升稳定性
+`testcases/ui/conftest.py` 用 **session 级 fixture** 登录一次并保存 `storageState`，后续用例直接加载：
 
-## 被测 API
+```python
+@pytest.fixture(scope="session")
+def logged_in_context(browser):
+    page = context.new_page()
+    LoginPage(page).open().login(STANDARD_USER, VALID_PASSWORD)
+    context.storage_state(path="reports/auth_state.json")  # 存登录态
+    ...
 
-- **目标**：JSONPlaceholder（<https://jsonplaceholder.typicode.com）>
+@pytest.fixture()
+def logged_in_page(logged_in_context):
+    page = logged_in_context.new_page()   # 直接就是已登录状态
+    yield page
+```
 
-- **类型**：免费公开的 RESTful API，无需认证
+登录流程从「每条用例跑一次」变成「整个会话跑一次」，UI 套件执行时间大幅下降。
 
-- **资源**：/posts（帖子的 CRUD 操作）
+### 4. 失败自动留痕
+
+- 接口失败 → 日志落盘 `logs/test.log`，带请求 URL、入参、状态码、耗时
+- UI 失败 → 自动全页截图，直接挂进 Allure 报告
+- 所有断言报错都带 **期望值 vs 实际值 + 完整响应体**，不用复现就能定位
+
+### 5. CI 流水线
+
+`.github/workflows/ci.yml` 分三个 job：
+
+| Job | 说明 |
+| --- | --- |
+| `api-test` | 跑接口套件，上传 pytest-html + Allure 原始结果 |
+| `ui-test` | 安装 Playwright 浏览器后跑 UI 套件（依赖 api-test 通过） |
+| `allure-report` | 合并两端结果，生成可浏览的 Allure HTML |
+
+触发时机：push/PR 到 main、每天 09:00 定时回归、手动触发。
+
+## 被测站点
+
+| 层次 | 目标 | 说明 |
+| --- | --- | --- |
+| 接口 | [JSONPlaceholder](https://jsonplaceholder.typicode.com) | 免费公开 RESTful API，无需认证 |
+| UI | [SauceDemo](https://www.saucedemo.com) | 公开电商练习站点，含 standard_user / locked_out_user 等测试账号 |
+
+## 环境要求
+
+- Python 3.10+
+- 查看 Allure 报告需本地安装 [Allure 命令行](https://allurereport.org/docs/install/)（可选）

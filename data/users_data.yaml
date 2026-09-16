@@ -1,0 +1,42 @@
+# 用户模块测试数据
+
+get_user_cases:
+  - name: "正常获取用户1"
+    user_id: 1
+    expected_status: 200
+    expected_username: "Bret"
+  - name: "正常获取用户10"
+    user_id: 10
+    expected_status: 200
+    expected_username: "Moriah.Stanton"
+  - name: "异常-不存在的用户ID999"
+    user_id: 999
+    expected_status: 404
+    expected_username: null
+  - name: "异常-非法字符用户ID"
+    user_id: "xyz"
+    expected_status: 404
+    expected_username: null
+
+# 用户关联资源：每个用户应有 10 条帖子 / 10 个相册 / 200 条待办
+user_relations:
+  - name: "用户1的帖子列表"
+    user_id: 1
+    resource: "posts"
+    expected_status: 200
+  - name: "用户1的相册列表"
+    user_id: 1
+    resource: "albums"
+    expected_status: 200
+  - name: "用户5的待办列表"
+    user_id: 5
+    resource: "todos"
+    expected_status: 200
+
+create_user_cases:
+  - name: "正常创建用户"
+    data:
+      name: "成俊杰"
+      username: "chengjunjie"
+      email: "test@example.com"
+    expected_status: 201

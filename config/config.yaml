@@ -1,0 +1,16 @@
+# 测试环境配置
+# 环境变量可覆盖任意一项：TEST_BASE_URL / TEST_TIMEOUT / TEST_UI_HEADLESS ...
+base_url: "https://jsonplaceholder.typicode.com"
+timeout: 30
+verify_ssl: true
+retry_times: 2
+retry_delay: 1
+
+# 性能兜底阈值（秒）。公开测试站网络波动大，阈值放宽到 15s 才有区分度，
+# 真正的性能回归应该在专用压测环境按 SLA 断言。
+max_response_time: 15.0
+
+# UI 自动化配置
+ui_base_url: "https://www.saucedemo.com"
+ui_headless: true
+ui_timeout: 15000

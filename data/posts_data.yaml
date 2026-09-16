@@ -1,3 +1,6 @@
+# 帖子模块测试数据
+# 每一条对应一个 parametrize 用例，name 会显示在测试报告中
+
 get_post_cases:
   - name: "正常获取帖子1"
     post_id: 1
@@ -7,6 +10,26 @@ get_post_cases:
     post_id: 2
     expected_status: 200
     expected_userId: 1
+  - name: "正常获取帖子3"
+    post_id: 3
+    expected_status: 200
+    expected_userId: 1
+  - name: "正常获取帖子50"
+    post_id: 50
+    expected_status: 200
+    expected_userId: 5
+  - name: "异常-不存在的帖子ID999"
+    post_id: 999
+    expected_status: 404
+    expected_userId: null
+  - name: "异常-非法字符ID"
+    post_id: "abc"
+    expected_status: 404
+    expected_userId: null
+  - name: "异常-负数ID"
+    post_id: -1
+    expected_status: 404
+    expected_userId: null
 
 create_post_cases:
   - name: "正常创建帖子"
@@ -17,7 +40,72 @@ create_post_cases:
     expected_status: 201
   - name: "创建帖子-带特殊字符"
     data:
-      title: "hello world"
-      body: "test content"
+      title: "hello world & <test>"
+      body: "content with 'quotes' and \"double\""
       userId: 1
     expected_status: 201
+  - name: "创建帖子-标题为中文"
+    data:
+      title: "中文标题测试"
+      body: "中文内容测试"
+      userId: 1
+    expected_status: 201
+  - name: "边界-空标题"
+    data:
+      title: ""
+      body: "test body"
+      userId: 1
+    expected_status: 201
+  - name: "边界-空body"
+    data:
+      title: "test title"
+      body: ""
+      userId: 1
+    expected_status: 201
+  - name: "边界-超长标题(500字符)"
+    data:
+      title: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      body: "long title test"
+      userId: 1
+    expected_status: 201
+  - name: "异常-缺少title字段"
+    data:
+      body: "test body"
+      userId: 1
+    expected_status: 201
+    # 残缺数据场景：服务端仅原样回写已传字段，不要求补齐 title
+    schema_complete: false
+    expected_fields:
+      - "body"
+      - "userId"
+      - "id"
+
+update_post_cases:
+  - name: "正常全量更新帖子1"
+    post_id: 1
+    data:
+      id: 1
+      title: "updated title"
+      body: "updated body"
+      userId: 1
+    expected_status: 200
+  - name: "正常全量更新帖子50"
+    post_id: 50
+    data:
+      id: 50
+      title: "another updated"
+      body: "another body"
+      userId: 5
+    expected_status: 200
+
+patch_post_cases:
+  - name: "局部更新-只改标题"
+    post_id: 1
+    data:
+      title: "patched title only"
+    expected_status: 200
+  - name: "局部更新-只改body"
+    post_id: 2
+    data:
+      body: "patched body only"
+    expected_status: 200
