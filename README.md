@@ -6,8 +6,9 @@
 - **UI 自动化**：Playwright + Page Object Model，覆盖 SauceDemo 电商站点的登录、商品列表、购物车
 - **测试规模**：**56 条用例全部通过**（42 接口 + 14 UI），单次全量运行约 110 秒
 
-> 📌 **所有命令都请在项目根目录（含 `pytest.ini` 的那一层）执行**，
-> 否则测试配置不会被加载，且会生成空报告。详见 [快速开始](#快速开始)。
+> 📌 **所有命令都请先 `cd` 到项目根目录（含 `pytest.ini` 的那一层）再执行**，
+> 例如 `cd D:\project\api_test_project`，否则测试配置不会被加载，且会生成空报告。
+> 详见 [快速开始](#快速开始)。
 
 ## 报告预览
 
@@ -187,16 +188,21 @@ python -m playwright install chromium
 
 ### 4. 运行测试
 
-> ⚠️ **务必在项目根目录（含 `pytest.ini` 的这一层）执行命令。**
+> ⚠️ **务必先 `cd` 到项目根目录（含 `pytest.ini` 的这一层）再执行命令。**
 > `pytest.ini` 不会被上层目录加载，在错误的目录运行会导致 `addopts`、`markers`、
 > `testpaths` 全部失效，并生成一份**空报告**（Allure 页面显示 `0 test cases`）。
-> 若在错误目录运行，`conftest.py` 会直接报错终止并提示正确路径。
+> 若在错误目录运行，项目外层已放置守卫 `conftest.py`，会直接报错终止并提示正确路径。
 
 ```bash
-# 全部用例
+cd D:\project\api_test_project
 python -m pytest
+allure serve reports/allure-results
+```
 
-# 只跑接口 / 只跑 UI
+常用变体：
+
+```bash
+# 只跑接口 / 只跑 UI（同样先 cd 到项目根目录）
 python -m pytest testcases/posts testcases/users testcases/comments
 python -m pytest testcases/ui
 
