@@ -1,0 +1,309 @@
+{
+  "stats": {
+    "generated": 20,
+    "l1_executable": 15,
+    "l2_assertion_valid": 10,
+    "l3_mutation_killed": 10,
+    "kept": 10,
+    "adopted_net_new": 9,
+    "adoption_rate_kept": 50.0,
+    "adoption_rate_net_new": 45.0,
+    "l1_pass_rate": 75.0,
+    "l2_pass_rate": 50.0,
+    "l3_pass_rate": 50.0,
+    "mutation_kill_rate": 100.0,
+    "mutation_mutants": 4,
+    "mutation_killed": 4
+  },
+  "candidates": [
+    {
+      "id": "AI-001",
+      "module": "posts",
+      "title": "获取帖子列表返回 200 且数量为 100",
+      "code": "def test_get_post_list(): resp = api.get_post_list(); assert resp.status_code == 200; assert len(resp.json()) == 100",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "既有用例已覆盖，AI 重复生成 —— 计入有效但去重",
+      "kept": true
+    },
+    {
+      "id": "AI-002",
+      "module": "posts",
+      "title": "获取单个帖子详情字段完整",
+      "code": "def test_get_post_detail(): resp = api.get_post_detail(1); assert resp.status_code == 200; assert set(resp.json()) >= {'userId','id','title','body'}",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "契约断言到位，采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-003",
+      "module": "posts",
+      "title": "按 userId 筛选帖子后结果全部归属于该用户",
+      "code": "def test_filter(): resp = api.get_posts_by_user(1); assert all(p['userId'] == 1 for p in resp.json())",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "参数生效性断言，能抓住「筛选参数被忽略」的缺陷",
+      "kept": true
+    },
+    {
+      "id": "AI-004",
+      "module": "posts",
+      "title": "创建帖子返回 201 且回写自增 id",
+      "code": "def test_create(): resp = api.create_post({'title':'t','body':'b','userId':1}); assert resp.status_code == 201; assert resp.json()['id']",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-005",
+      "module": "posts",
+      "title": "_limit=5 分页只返回 5 条",
+      "code": "def test_limit(): resp = api.get_post_list(_limit=5); assert len(resp.json()) == 5",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-006",
+      "module": "posts",
+      "title": "PUT 全量更新后 title/body 均为新值",
+      "code": "def test_put(): resp = api.update_post(1, {'id':1,'title':'new','body':'newbody','userId':1}); assert resp.json()['title'] == 'new'",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-007",
+      "module": "posts",
+      "title": "PATCH 只更新指定字段",
+      "code": "def test_patch(): resp = api.patch_post(1, {'title':'only'}); assert resp.json()['title'] == 'only'",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-008",
+      "module": "posts",
+      "title": "DELETE 成功返回空对象 {}",
+      "code": "def test_delete(): resp = api.delete_post(1); assert resp.status_code == 200; assert resp.json() == {}",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-009",
+      "module": "posts",
+      "title": "不存在的帖子返回 404",
+      "code": "def test_404(): resp = api.get_post_detail(999); assert resp.status_code == 404",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-010",
+      "module": "posts",
+      "title": "帖子下评论的 postId 全部一致",
+      "code": "def test_comments(): resp = api.get_post_comments(1); assert all(c['postId'] == 1 for c in resp.json())",
+      "l1": true,
+      "l2": true,
+      "l3": true,
+      "note": "采纳",
+      "kept": true
+    },
+    {
+      "id": "AI-011",
+      "module": "posts",
+      "title": "创建帖子返回 201",
+      "code": "def test_create_simple(): assert api.create_post({...}).status_code == 201",
+      "l1": true,
+      "l2": false,
+      "l3": false,
+      "note": "⚠ 只断言状态码：服务端 201 但 title 被吞掉照样通过 —— L2 淘汰",
+      "kept": false,
+      "reason": "断言有效性不足：缺少契约与业务值校验"
+    },
+    {
+      "id": "AI-012",
+      "module": "users",
+      "title": "获取用户列表状态码 200",
+      "code": "def test_users(): assert api.get_users().status_code == 200",
+      "l1": true,
+      "l2": false,
+      "l3": false,
+      "note": "⚠ 同上，无字段校验 —— L2 淘汰",
+      "kept": false,
+      "reason": "断言有效性不足"
+    },
+    {
+      "id": "AI-013",
+      "module": "posts",
+      "title": "更新帖子返回 200",
+      "code": "def test_update(): assert api.update_post(1, {...}).status_code == 200",
+      "l1": true,
+      "l2": false,
+      "l3": false,
+      "note": "⚠ 未校验 title 是否真的变成新值 —— L2 淘汰",
+      "kept": false,
+      "reason": "断言有效性不足：无法发现「更新未生效」类缺陷"
+    },
+    {
+      "id": "AI-014",
+      "module": "comments",
+      "title": "评论列表非空",
+      "code": "def test_comments_nonempty(): assert len(api.get_comment_list().json()) > 0",
+      "l1": true,
+      "l2": false,
+      "l3": false,
+      "note": "⚠ 只判非空，不校验字段与条数 —— L2 淘汰",
+      "kept": false,
+      "reason": "断言有效性不足"
+    },
+    {
+      "id": "AI-015",
+      "module": "posts",
+      "title": "帖子列表是 JSON",
+      "code": "def test_json(): assert api.get_post_list().headers['Content-Type'].startswith('application/json')",
+      "l1": true,
+      "l2": false,
+      "l3": false,
+      "note": "⚠ 头部断言有价值但不足以作为独立用例 —— L2 淘汰（并入既有用例）",
+      "kept": false,
+      "reason": "断言维度单一，不构成独立业务用例"
+    },
+    {
+      "id": "AI-016",
+      "module": "posts",
+      "title": "帖子详情返回 author 对象",
+      "code": "def test_author(): assert 'author' in api.get_post_detail(1).json()",
+      "l1": false,
+      "l2": false,
+      "l3": false,
+      "note": "❌ 幻觉：JSONPlaceholder 帖子结构里没有 author 字段，用例必挂 —— L1 淘汰",
+      "kept": false,
+      "reason": "接口契约不存在（AI 臆造字段）"
+    },
+    {
+      "id": "AI-017",
+      "module": "auth",
+      "title": "未带 Token 访问受保护接口返回 401",
+      "code": "def test_401(): assert api_no_token.get('/posts').status_code == 401",
+      "l1": false,
+      "l2": false,
+      "l3": false,
+      "note": "❌ 幻觉：该公开 API 无需鉴权，不存在 401 分支 —— L1 淘汰",
+      "kept": false,
+      "reason": "被测系统不存在该鉴权语义"
+    },
+    {
+      "id": "AI-018",
+      "module": "posts",
+      "title": "分页返回 total 总数字段",
+      "code": "def test_total(): assert 'total' in api.get_post_list(_page=1).json()",
+      "l1": false,
+      "l2": false,
+      "l3": false,
+      "note": "❌ 幻觉：JSONPlaceholder 不返回 total，只有裸数组 —— L1 淘汰",
+      "kept": false,
+      "reason": "臆造响应结构"
+    },
+    {
+      "id": "AI-019",
+      "module": "posts",
+      "title": "删除后再次获取返回 404",
+      "code": "def test_delete_then_get(): api.delete_post(1); assert api.get_post_detail(1).status_code == 404",
+      "l1": false,
+      "l2": false,
+      "l3": false,
+      "note": "❌ 前提不成立：JSONPlaceholder 是假 REST，删除不真正持久化，帖子 1 仍可查到 —— L1 淘汰",
+      "kept": false,
+      "reason": "对被测系统的有状态性做了错误假设"
+    },
+    {
+      "id": "AI-020",
+      "module": "posts",
+      "title": "创建帖子后能在列表中查到",
+      "code": "def test_persist(): api.create_post({...}); assert any(p['title']=='new' for p in api.get_post_list().json())",
+      "l1": false,
+      "l2": false,
+      "l3": false,
+      "note": "❌ 同上：假 REST 不回写持久层 —— L1 淘汰",
+      "kept": false,
+      "reason": "对被测系统的有状态性做了错误假设"
+    }
+  ],
+  "reject_reasons": {
+    "断言有效性不足：缺少契约与业务值校验": 1,
+    "断言有效性不足": 2,
+    "断言有效性不足：无法发现「更新未生效」类缺陷": 1,
+    "断言维度单一，不构成独立业务用例": 1,
+    "接口契约不存在（AI 臆造字段）": 1,
+    "被测系统不存在该鉴权语义": 1,
+    "臆造响应结构": 1,
+    "对被测系统的有状态性做了错误假设": 2
+  },
+  "mutation": {
+    "mutants": 4,
+    "killed": 4,
+    "survived": 0,
+    "kill_rate": 100.0,
+    "note": "向业务 API 层注入 4 处真实缺陷，逐条跑对应用例；4 处全部被断言捕获（failed），另有 1 条基线对照确认未改代码时用例正常通过。",
+    "details": [
+      {
+        "id": "M1",
+        "desc": "筛选参数 userId 被静默忽略（服务端 bug 的典型形态）",
+        "expected": "failed",
+        "actual": "failed",
+        "killed": true,
+        "caught_by": "断言每条帖子 userId == 1"
+      },
+      {
+        "id": "M2",
+        "desc": "更新接口把 title 字段丢弃，导致更新未生效",
+        "expected": "failed",
+        "actual": "failed",
+        "killed": true,
+        "caught_by": "断言更新后 title 等于新值"
+      },
+      {
+        "id": "M3",
+        "desc": "分页参数 _limit 被丢弃，返回全量数据",
+        "expected": "failed",
+        "actual": "failed",
+        "killed": true,
+        "caught_by": "断言分页返回条数 == 5"
+      },
+      {
+        "id": "M4",
+        "desc": "详情接口固定返回 id=1，忽略请求的 id",
+        "expected": "failed",
+        "actual": "failed",
+        "killed": true,
+        "caught_by": "断言返回 id 等于请求 id"
+      },
+      {
+        "id": "M5",
+        "desc": "基线对照：不改任何代码",
+        "expected": "passed",
+        "actual": "passed",
+        "killed": true,
+        "caught_by": "（对照，验证测试本身未损坏）"
+      }
+    ]
+  }
+}

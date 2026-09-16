@@ -1,0 +1,49 @@
+{
+  "mutants": 4,
+  "killed": 4,
+  "survived": 0,
+  "kill_rate": 100.0,
+  "note": "向业务 API 层注入 4 处真实缺陷，逐条跑对应用例；4 处全部被断言捕获（failed），另有 1 条基线对照确认未改代码时用例正常通过。",
+  "details": [
+    {
+      "id": "M1",
+      "desc": "筛选参数 userId 被静默忽略（服务端 bug 的典型形态）",
+      "expected": "failed",
+      "actual": "failed",
+      "killed": true,
+      "caught_by": "断言每条帖子 userId == 1"
+    },
+    {
+      "id": "M2",
+      "desc": "更新接口把 title 字段丢弃，导致更新未生效",
+      "expected": "failed",
+      "actual": "failed",
+      "killed": true,
+      "caught_by": "断言更新后 title 等于新值"
+    },
+    {
+      "id": "M3",
+      "desc": "分页参数 _limit 被丢弃，返回全量数据",
+      "expected": "failed",
+      "actual": "failed",
+      "killed": true,
+      "caught_by": "断言分页返回条数 == 5"
+    },
+    {
+      "id": "M4",
+      "desc": "详情接口固定返回 id=1，忽略请求的 id",
+      "expected": "failed",
+      "actual": "failed",
+      "killed": true,
+      "caught_by": "断言返回 id 等于请求 id"
+    },
+    {
+      "id": "M5",
+      "desc": "基线对照：不改任何代码",
+      "expected": "passed",
+      "actual": "passed",
+      "killed": true,
+      "caught_by": "（对照，验证测试本身未损坏）"
+    }
+  ]
+}

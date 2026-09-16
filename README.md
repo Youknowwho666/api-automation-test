@@ -4,6 +4,39 @@
 
 - **接口自动化**：Python + Pytest + requests，覆盖 JSONPlaceholder 公开 API 的 `/posts`、`/users`、`/comments` 三大模块
 - **UI 自动化**：Playwright + Page Object Model，覆盖 SauceDemo 电商站点的登录、商品列表、购物车
+- **测试规模**：**56 条用例全部通过**（42 接口 + 14 UI），单次全量运行约 110 秒
+
+## 报告预览
+
+### Allure 概览：56 条用例，100% 通过
+
+![Allure 概览](docs/screenshots/allure-01-overview.png)
+
+### 按功能分组（Behaviors）
+
+feature / story 两级分组，绿色为通过数：
+
+![Allure Behaviors](docs/screenshots/allure-02-behaviors.png)
+
+### 用例详情：步骤树 + 数据驱动参数
+
+`@allure.step` 会把用例内部步骤展开成树；数据驱动用例的参数也会显示出来：
+
+![Allure 用例详情](docs/screenshots/allure-06-test-steps.png)
+
+### UI 用例详情：带标记与日志附件
+
+UI 用例带 `ui` / `smoke` 标记，步骤失败时自动挂全页截图：
+
+![Allure UI 用例详情](docs/screenshots/allure-07-ui-test-detail.png)
+
+### 统计图表
+
+![Allure Graphs](docs/screenshots/allure-04-graphs.png)
+
+### pytest-html 轻量报告
+
+![pytest-html 报告](docs/screenshots/pytest-html-01-summary.png)
 
 ## 技术栈
 
@@ -50,6 +83,10 @@ api_test_project/
 │       └── test_inventory.py       #  商品与购物车用例（8 条）
 ├── logs/                            # 运行日志（按天切分，保留 7 天）
 ├── reports/                         # 报告输出（allure-results / report.html / 失败截图）
+├── docs/                            # 文档与实证
+│   ├── ai-efficiency.md            #  AI 提效实测报告（三层漏斗 + 采纳率）
+│   ├── screenshots/                #  报告截图（README 引用）
+│   └── tools/                      #  实验脚本（可复现）
 ├── .github/workflows/ci.yml         # CI：接口 + UI 双 job + Allure 汇总
 ├── conftest.py                      # 全局 fixture 与失败日志
 ├── pytest.ini                       # pytest 配置
@@ -232,6 +269,47 @@ def logged_in_page(logged_in_context):
 | `allure-report` | 合并两端结果，生成可浏览的 Allure HTML |
 
 触发时机：push/PR 到 main、每天 09:00 定时回归、手动触发。
+
+### 6. AI 提效：三层漏斗验收，采纳率 50%
+
+这个项目里的用例不是全部手写的。我让 AI 批量生成候选用例，再用**三层漏斗**逐条验收，
+得出的真实数据（详见 [`docs/ai-efficiency.md`](docs/ai-efficiency.md)）：
+
+| 环节 | 结果 |
+| --- | --- |
+| AI 生成候选 | 20 条 |
+| L1 可执行（能跑通） | 15 条 → **75.0%** |
+| L2 断言有效（契约 + 业务值） | 10 条 → **50.0%** |
+| L3 变异杀死（注入缺陷能抓） | 10 条 → **50.0%** |
+| **最终采纳** | **10 条（净新增 9 条）→ 采纳率 45%~50%** |
+
+**三层漏斗是怎么定的：**
+
+1. **L1 可执行性** —— 真跑一遍，拦住 AI 幻觉（臆造字段、臆造状态码、臆造响应结构）。
+2. **L2 断言有效性** —— 人工审断言，只判 `status_code == 200` 的一律打回。
+3. **L3 变异杀伤率** —— 往业务 API 层**真的注入 4 处缺陷**，看用例会不会红。
+
+L3 不是嘴上说说，实测结果如下：
+
+| 变异体 | 注入的缺陷 | 用例是否抓住 |
+| --- | --- | --- |
+| M1 | 筛选参数 `userId` 被静默忽略 | ✅ 失败 |
+| M2 | 更新接口丢弃 `title` 字段 | ✅ 失败 |
+| M3 | 分页参数 `_limit` 被丢弃 | ✅ 失败 |
+| M4 | 详情接口固定返回 `id=1` | ✅ 失败 |
+| M5 | 基线对照（不改代码） | ✅ 通过 |
+
+**变异杀伤率 4/4 = 100%。**
+
+排查 AI 产出时发现，淘汰的一半都是「断言不够硬」——AI 很会写能跑通的用例，
+但不擅长判断断言有没有业务价值。所以**效率提升来自 AI 生成，质量守住靠 L2/L3 两道人工关卡**。
+
+复现命令：
+
+```bash
+python docs/tools/ai_funnel.py       # 三层漏斗统计
+python docs/tools/mutation_demo.py   # 变异测试实证（跑完自动还原源码）
+```
 
 ## 被测站点
 
