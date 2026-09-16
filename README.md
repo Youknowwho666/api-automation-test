@@ -6,6 +6,9 @@
 - **UI 自动化**：Playwright + Page Object Model，覆盖 SauceDemo 电商站点的登录、商品列表、购物车
 - **测试规模**：**56 条用例全部通过**（42 接口 + 14 UI），单次全量运行约 110 秒
 
+> 📌 **所有命令都请在项目根目录（含 `pytest.ini` 的那一层）执行**，
+> 否则测试配置不会被加载，且会生成空报告。详见 [快速开始](#快速开始)。
+
 ## 报告预览
 
 ### Allure 概览：56 条用例，100% 通过
@@ -184,6 +187,11 @@ python -m playwright install chromium
 
 ### 4. 运行测试
 
+> ⚠️ **务必在项目根目录（含 `pytest.ini` 的这一层）执行命令。**
+> `pytest.ini` 不会被上层目录加载，在错误的目录运行会导致 `addopts`、`markers`、
+> `testpaths` 全部失效，并生成一份**空报告**（Allure 页面显示 `0 test cases`）。
+> 若在错误目录运行，`conftest.py` 会直接报错终止并提示正确路径。
+
 ```bash
 # 全部用例
 python -m pytest
@@ -208,6 +216,13 @@ python -m pytest --reruns 2 --reruns-delay 3
 # 方式二：Allure（推荐，含步骤树与失败截图）
 allure serve reports/allure-results
 ```
+
+> 💡 Allure 报告**必须通过 HTTP 服务查看**（即 `allure serve` 或
+> `allure generate` + 本地静态服务）。直接双击 `allure-report/index.html`
+> 会因浏览器 CORS 限制导致页面空白、提示 `Failed to fetch`。
+>
+> 💡 每轮测试开始前，`conftest.py` 会自动清空 `reports/allure-results`，
+> 因此**不需要**手动删除旧结果，报告数据也不会跨轮次累积。
 
 ## 框架亮点
 
