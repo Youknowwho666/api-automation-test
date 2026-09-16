@@ -18,6 +18,8 @@ logs/*
 allure-results/
 allure-report/
 auth_state.json
+# conftest.py 清理 Allure 结果时的暂存目录
+.allure-results.stale*/
 
 # ---------- IDE / 编辑器 ----------
 .idea/
