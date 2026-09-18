@@ -58,7 +58,14 @@ class TestComments:
     @allure.title("按条件筛选评论-数据驱动")
     @pytest.mark.parametrize("case", DATA["filter_cases"], ids=case_ids(DATA["filter_cases"]))
     def test_filter_comments(self, case):
-        response = self.api.get_comment_list(**{case["param"]: case["value"]})
+        # 按筛选字段分派到对应的业务方法，用例不手拼查询参数
+        method = {
+            "postId": self.api.get_comments_by_post,
+            "email": self.api.get_comments_by_email,
+        }[case["param"]]
+
+        with allure.step(f"按 {case['param']}={case['value']} 筛选"):
+            response = method(case["value"])
 
         AssertUtil.assert_status_code(response, case["expected_status"])
         body = response.json()

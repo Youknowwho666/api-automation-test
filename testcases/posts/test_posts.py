@@ -173,7 +173,7 @@ class TestPosts:
         )
 
     @allure.story("异常场景")
-    @allure.title("异常-非法方法访问帖子集合返回 405")
+    @allure.title("异常-对帖子集合使用未实现的 DELETE 返回 404")
     def test_invalid_method_on_collection(self):
         # 对集合用 DELETE 是 JSONPlaceholder 未实现的语义，用于验证错误码分支
         response = self.api.delete("/posts")

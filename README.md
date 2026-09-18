@@ -4,7 +4,9 @@
 
 - **接口自动化**：Python + Pytest + requests，覆盖 JSONPlaceholder 公开 API 的 `/posts`、`/users`、`/comments` 三大模块
 - **UI 自动化**：Playwright + Page Object Model，覆盖 SauceDemo 电商站点的登录、商品列表、购物车
-- **测试规模**：**56 条用例全部通过**（42 接口 + 14 UI），单次全量运行约 110 秒
+- **测试规模**：**57 条用例全部通过**（43 接口 + 14 UI）
+- **运行耗时**：全量约 1～2.5 分钟。UI 套件因复用登录态只需约 20 秒，
+  耗时几乎都花在接口套件的公网往返上（公开站点网络波动大，实测 64s～143s 不等）
 
 > 📌 **所有命令都请先 `cd` 到项目根目录（含 `pytest.ini` 的那一层）再执行**，
 > 例如 `cd D:\project\api_test_project`，否则测试配置不会被加载，且会生成空报告。
@@ -12,7 +14,7 @@
 
 ## 报告预览
 
-### Allure 概览：56 条用例，100% 通过
+### Allure 概览：57 条用例，100% 通过
 
 ![Allure 概览](docs/screenshots/allure-01-overview.png)
 
@@ -89,9 +91,11 @@ api_test_project/
 ├── reports/                         # 报告输出（allure-results / report.html / 失败截图）
 ├── docs/                            # 文档与实证
 │   ├── ai-efficiency.md            #  AI 提效实测报告（三层漏斗 + 采纳率）
+│   ├── ai-efficiency.json          #  20 条候选的逐条判定与统计
+│   ├── mutation-report.json        #  4 个变异体的实测结果
 │   ├── screenshots/                #  报告截图（README 引用）
 │   └── tools/                      #  实验脚本（可复现）
-├── .github/workflows/ci.yml         # CI：接口 + UI 双 job + Allure 汇总
+├── .github/workflows/ci.yml         # CI：接口 / UI / 报告汇总 三个 job
 ├── conftest.py                      # 全局 fixture 与失败日志
 ├── pytest.ini                       # pytest 配置
 └── requirements.txt
@@ -129,13 +133,13 @@ UI 层同样遵循这条思路：**页面改了只改 Page Object，用例不动
 
 ## 测试用例设计
 
-### 接口自动化（42 条）
+### 接口自动化（43 条）
 
 | 模块 | 用例数 | 覆盖场景 |
 | --- | --- | --- |
-| 帖子 `/posts` | 19 | 列表/详情/筛选/评论、创建（含空值、超长、缺字段）、PUT/PATCH、删除、404/5xx 异常、性能兜底 |
-| 用户 `/users` | 10 | 列表、详情、关联资源（posts/albums/todos）、创建 |
-| 评论 `/comments` | 5 | 列表、详情、按 postId / email 筛选 |
+| 帖子 `/posts` | 27 | 列表/详情/筛选/评论、创建（含空值、超长、缺字段）、PUT/PATCH、删除、404/5xx 异常、性能兜底 |
+| 用户 `/users` | 9 | 列表、详情、关联资源（posts/albums/todos）、创建 |
+| 评论 `/comments` | 7 | 列表、详情、按 postId / email 筛选 |
 
 ### UI 自动化（14 条）
 
@@ -144,7 +148,7 @@ UI 层同样遵循这条思路：**页面改了只改 Page Object，用例不动
 | 登录 | 6 | 登录成功、锁定账号、密码错误、账号为空、密码为空、元素可见性 |
 | 商品与购物车 | 8 | 商品加载、价格/名称排序、加入购物车（1 件/2 件）、移除商品、跳转购物车、元素可见性 |
 
-> 合计 **56 条**用例（42 接口 + 14 UI）。
+> 合计 **57 条**用例（43 接口 + 14 UI）。
 
 ### 多维度断言
 

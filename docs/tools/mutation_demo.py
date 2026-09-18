@@ -6,18 +6,18 @@
 做法：临时备份 posts_api.py，往里面注入一个缺陷，跑指定用例，
 记录是否失败（failed = 被杀死 / passed = 存活），最后还原文件。
 
-用法：python mutation_demo.py
+用法：python docs/tools/mutation_demo.py
 """
 import json
-import os
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(r"D:\project\api_test_project")
-PY = r"D:\project\venv\Scripts\python.exe"
+# 路径全部按「本文件位置」推导，换机器 / 换盘符 / 上 CI 都能直接跑
+ROOT = Path(__file__).resolve().parents[2]
+PY = sys.executable
 API = ROOT / "testcases" / "posts" / "posts_api.py"
 BACKUP = ROOT / "testcases" / "posts" / "posts_api.py.bak"
 

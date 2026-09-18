@@ -90,7 +90,7 @@ L3 不是估算，是真的往业务 API 层注入缺陷，看用例是否变红
 复现命令：
 
 ```bash
-python mutation_demo.py     # 注入缺陷 → 跑用例 → 自动还原
+python docs/tools/mutation_demo.py     # 注入缺陷 → 跑用例 → 自动还原
 ```
 
 ## 方法论：怎么用 AI 才划算
@@ -114,10 +114,10 @@ python mutation_demo.py     # 注入缺陷 → 跑用例 → 自动还原
 
 ```bash
 # 生成漏斗统计（读取 candidates 定义，输出 json + 控制台汇总）
-python ai_funnel.py
+python docs/tools/ai_funnel.py
 
 # 变异测试实证（会临时改 posts_api.py，跑完自动还原）
-python mutation_demo.py
+python docs/tools/mutation_demo.py
 ```
 
 产出文件：

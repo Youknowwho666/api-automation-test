@@ -23,3 +23,8 @@ filter_cases:
     param: "postId"
     value: 100
     expected_status: 200
+  # 邮箱筛选：顺带覆盖查询参数里的特殊字符转义（@ 与 . 必须正确编码）
+  - name: "按邮箱筛选评论（含@特殊字符）"
+    param: "email"
+    value: "Eliseo@gardner.biz"
+    expected_status: 200

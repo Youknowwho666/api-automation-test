@@ -5,15 +5,13 @@
   L2 断言有效性 —— 断言是否真的校验了业务语义（而不是只判 200）
   L3 变异杀伤率 —— 把被测实现「变异」后，这条用例是否失败（能抓 bug）
 
-产出：docs/ai-efficiency.md  + 机器可读的 docs/ai-efficiency.json
+产出：docs/ai-efficiency.json（漏斗统计数据，供 ai-efficiency.md 引用）
 """
 import json
-import os
-import subprocess
-import sys
 from pathlib import Path
 
-ROOT = Path(r"D:\project\api_test_project")
+# 路径按「本文件位置」推导，换机器 / 换盘符 / 上 CI 都能直接跑
+ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 DOCS.mkdir(exist_ok=True)
 
@@ -124,6 +122,7 @@ CANDIDATES = [
         "note": "⚠ 只断言状态码：服务端 201 但 title 被吞掉照样通过 —— L2 淘汰",
         "kept": False,
         "reason": "断言有效性不足：缺少契约与业务值校验",
+        "category": "断言有效性不足（只判状态码 / 断言维度单一）",
     },
     {
         "id": "AI-012",
@@ -134,6 +133,7 @@ CANDIDATES = [
         "note": "⚠ 同上，无字段校验 —— L2 淘汰",
         "kept": False,
         "reason": "断言有效性不足",
+        "category": "断言有效性不足（只判状态码 / 断言维度单一）",
     },
     {
         "id": "AI-013",
@@ -144,6 +144,7 @@ CANDIDATES = [
         "note": "⚠ 未校验 title 是否真的变成新值 —— L2 淘汰",
         "kept": False,
         "reason": "断言有效性不足：无法发现「更新未生效」类缺陷",
+        "category": "断言有效性不足（只判状态码 / 断言维度单一）",
     },
     {
         "id": "AI-014",
@@ -154,6 +155,7 @@ CANDIDATES = [
         "note": "⚠ 只判非空，不校验字段与条数 —— L2 淘汰",
         "kept": False,
         "reason": "断言有效性不足",
+        "category": "断言有效性不足（只判状态码 / 断言维度单一）",
     },
     {
         "id": "AI-015",
@@ -164,6 +166,7 @@ CANDIDATES = [
         "note": "⚠ 头部断言有价值但不足以作为独立用例 —— L2 淘汰（并入既有用例）",
         "kept": False,
         "reason": "断言维度单一，不构成独立业务用例",
+        "category": "断言有效性不足（只判状态码 / 断言维度单一）",
     },
 
     # ---------- 第 3 类：L1 不通过（AI 幻觉：接口/字段不存在）----------
@@ -176,6 +179,7 @@ CANDIDATES = [
         "note": "❌ 幻觉：JSONPlaceholder 帖子结构里没有 author 字段，用例必挂 —— L1 淘汰",
         "kept": False,
         "reason": "接口契约不存在（AI 臆造字段）",
+        "category": "AI 臆造接口契约（字段/状态码/响应结构不存在）",
     },
     {
         "id": "AI-017",
@@ -186,6 +190,7 @@ CANDIDATES = [
         "note": "❌ 幻觉：该公开 API 无需鉴权，不存在 401 分支 —— L1 淘汰",
         "kept": False,
         "reason": "被测系统不存在该鉴权语义",
+        "category": "AI 臆造接口契约（字段/状态码/响应结构不存在）",
     },
     {
         "id": "AI-018",
@@ -196,6 +201,7 @@ CANDIDATES = [
         "note": "❌ 幻觉：JSONPlaceholder 不返回 total，只有裸数组 —— L1 淘汰",
         "kept": False,
         "reason": "臆造响应结构",
+        "category": "AI 臆造接口契约（字段/状态码/响应结构不存在）",
     },
     {
         "id": "AI-019",
@@ -206,6 +212,7 @@ CANDIDATES = [
         "note": "❌ 前提不成立：JSONPlaceholder 是假 REST，删除不真正持久化，帖子 1 仍可查到 —— L1 淘汰",
         "kept": False,
         "reason": "对被测系统的有状态性做了错误假设",
+        "category": "对被测系统的状态性做了错误假设",
     },
     {
         "id": "AI-020",
@@ -216,6 +223,7 @@ CANDIDATES = [
         "note": "❌ 同上：假 REST 不回写持久层 —— L1 淘汰",
         "kept": False,
         "reason": "对被测系统的有状态性做了错误假设",
+        "category": "对被测系统的状态性做了错误假设",
     },
 ]
 
@@ -248,8 +256,9 @@ def main():
     rejected = [c for c in CANDIDATES if not c["kept"]]
     reasons = {}
     for c in rejected:
-        r = c.get("reason", "其他")
-        reasons[r] = reasons.get(r, 0) + 1
+        # 按 category 归并，逐条的细粒度原因仍保留在 candidates 里
+        key = c.get("category", c.get("reason", "其他"))
+        reasons[key] = reasons.get(key, 0) + 1
 
     # 并入变异测试实证结果（由 mutation_demo.py 产出）
     mut_path = DOCS / "mutation-report.json"
@@ -266,8 +275,10 @@ def main():
     )
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     print("\n淘汰原因分布:")
+    total_rejected = len(rejected)
     for k, v in sorted(reasons.items(), key=lambda x: -x[1]):
-        print(f"  {v} 条  {k}")
+        pct = round(v / total_rejected * 100, 1) if total_rejected else 0.0
+        print(f"  {v} 条（{pct}%）  {k}")
     if mutation:
         print(f"\n变异杀伤率(实测): {mutation['killed']}/{mutation['mutants']} = {mutation['kill_rate']}%")
 
